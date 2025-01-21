@@ -1,9 +1,109 @@
 <!DOCTYPE html>
 <html lang="zh">
+
 <head>
     <meta charset="UTF-8">
     <title>评论页面</title>
+    <!-- 加载动画的样式 -->
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box; /* 添加这个以确保内边距和边框包含在元素的宽度和高度内 */
+        }
+
+        html, body {
+            height: 100%; /* 确保body和html元素占据整个视口的高度 */
+        }
+
+        body {
+            display: flex; /* 使用Flexbox布局 */
+            justify-content: center; /* 水平居中 */
+            align-items: center; /* 垂直居中 */
+            background-color: white; /* 设置背景颜色为白色 */
+            position: relative;
+        }
+
+        .spinner {
+            --red: #d62d20;
+            --blue: #0057e7;
+            --green: #008744;
+            --yellow: #ffa700;
+            position: absolute;
+            width: 60px;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .spinner:before {
+            content: "";
+            display: block;
+            padding-top: 100%;
+        }
+
+        .circular {
+            animation: rotate73451 2s linear infinite;
+            height: 100%;
+            transform-origin: center center;
+            width: 100%;
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            margin: auto;
+        }
+
+        .path {
+            stroke-dasharray: 1, 200;
+            stroke-dashoffset: 0;
+            animation: dash0175 1.5s ease-in-out infinite, color7123 6s ease-in-out infinite;
+            stroke-linecap: round;
+        }
+
+        @keyframes rotate73451 {
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        @keyframes dash0175 {
+            0% {
+                stroke-dasharray: 1, 200;
+                stroke-dashoffset: 0;
+            }
+
+            50% {
+                stroke-dasharray: 89, 200;
+                stroke-dashoffset: -35px;
+            }
+
+            100% {
+                stroke-dasharray: 89, 200;
+                stroke-dashoffset: -124px;
+            }
+        }
+
+        @keyframes color7123 {
+            100%, 0% {
+                stroke: var(--red);
+            }
+
+            40% {
+                stroke: var(--blue);
+            }
+
+            66% {
+                stroke: var(--green);
+            }
+
+            80%, 90% {
+                stroke: var(--yellow);
+            }
+        }
+
+        /* 评论部分样式 */
         .comment-box {
             border: 1px solid #ccc;
             border-radius: 10px; /* 圆角 */
@@ -12,29 +112,35 @@
             background-size: cover;
             background-position: center;
         }
+
         .user-avatar img {
             width: 50px;
             height: 50px;
             border-radius: 50%; /* 圆形头像 */
             margin-right: 10px;
         }
+
         .user-info {
             display: flex;
             align-items: center;
         }
+
         /* 用户名链接样式 */
         .user-info a {
             color: black; /* 默认颜色为黑色 */
             text-decoration: none; /* 去除下划线 */
             transition: color 0.3s; /* 添加颜色过渡效果 */
         }
+
         .user-info a:hover {
             color: blue; /* 鼠标悬停时的颜色，您可以根据需要更改 */
         }
+
         .comment-time {
             font-size: 0.8em;
             color: gray;
         }
+
         video {
             max-width: 100%;
             height: auto;
@@ -43,86 +149,111 @@
     <!-- Markdown 渲染库 -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </head>
+
 <body>
+    <!-- 加载动画 -->
+    <div class="spinner" id="loadingSpinner">
+        <svg viewBox="25 25 50 50" class="circular">
+            <circle stroke-miterlimit="10" stroke-width="3" fill="none" r="20" cy="50" cx="50" class="path"></circle>
+        </svg>
+    </div>
 
-<!-- 动态生成的评论将插入到此处 -->
-<div id="commentsContainer"></div>
+    <!-- 动态生成的评论将插入到此处 -->
+    <div id="commentsContainer"></div>
 
-<script>
-    function parseCommentsFromUrl() {
-        const urlParams = new URLSearchParams(window.location.search);
-        const commentsJson = decodeURIComponent(urlParams.get('comment') || '[]');
-        return JSON.parse(commentsJson);
-    }
+    <script>
+        function parseCommentsFromUrl() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const commentsJson = decodeURIComponent(urlParams.get('comment') || '[]');
+            return JSON.parse(commentsJson);
+        }
 
-    // 函数：生成单个评论的div
-    function createCommentDiv(avatarUrl, userName, userLink, content, time, background) {
-        const commentBox = document.createElement('div');
-        commentBox.className = 'comment-box';
+        // 函数：生成单个评论的div
+        function createCommentDiv(avatarUrl, userName, userLink, content, time, background) {
+            const commentBox = document.createElement('div');
+            commentBox.className = 'comment-box';
 
-        // 用户信息部分
-        const userInfo = document.createElement('div');
-        userInfo.className = 'user-info';
-        
-        // 用户头像
-        const avatarDiv = document.createElement('div');
-        avatarDiv.className = 'user-avatar';
-        const avatarImg = document.createElement('img');
-        avatarImg.src = avatarUrl;
-        avatarDiv.appendChild(avatarImg);
-        
-        // 用户名和链接
-        const nameLink = document.createElement('a');
-        nameLink.href = userLink;
-        nameLink.innerText = userName;
-        nameLink.target = "_blank"; // 新窗口打开链接
-        
-        // 添加用户名到用户信息
-        userInfo.appendChild(avatarDiv);
-        userInfo.appendChild(nameLink);
+            if (background && background.type === 'image') {
+                commentBox.style.backgroundImage = `url(${background.url})`;
+            } else if (background && background.type === 'video') {
+                const videoElement = document.createElement('video');
+                videoElement.src = background.url;
+                videoElement.controls = true;
+                videoElement.autoplay = true;
+                videoElement.muted = false;
+                commentBox.appendChild(videoElement);
+            }
 
-        // 评论内容（使用marked将Markdown转换为HTML）
-        const contentDiv = document.createElement('div');
-        let renderedContent = marked.parse(content);
-        renderedContent = renderedContent.replace(/<script>[\s\S]*?<\/script>/gi, '');
-        contentDiv.innerHTML = renderedContent;
+            // 用户信息部分
+            const userInfo = document.createElement('div');
+            userInfo.className = 'user-info';
 
-        // 评论时间
-        const timeDiv = document.createElement('div');
-        timeDiv.className = 'comment-time';
-        timeDiv.innerText = new Date(time).toLocaleString();
+            // 用户头像
+            const avatarDiv = document.createElement('div');
+            avatarDiv.className = 'user-avatar';
+            const avatarImg = document.createElement('img');
+            avatarImg.src = avatarUrl;
+            avatarDiv.appendChild(avatarImg);
 
-        // 将所有元素添加到评论框中
-        commentBox.appendChild(userInfo);
-        commentBox.appendChild(contentDiv);
-        commentBox.appendChild(timeDiv);
+            // 用户名和链接
+            const nameLink = document.createElement('a');
+            nameLink.href = userLink;
+            nameLink.innerText = userName;
+            nameLink.target = "_blank"; // 新窗口打开链接
 
-        return commentBox;
-    }
+            // 添加用户名到用户信息
+            userInfo.appendChild(avatarDiv);
+            userInfo.appendChild(nameLink);
 
-    // 函数：渲染所有评论
-    function renderComments(comments) {
-        const container = document.getElementById('commentsContainer');
-        comments.forEach(comment => {
-            const commentElement = createCommentDiv(
-                comment.avatarUrl,
-                comment.userName,
-                comment.userLink,
-                comment.content,
-                comment.time,
-            );
-            container.appendChild(commentElement);
-        });
-    }
+            // 评论内容（使用marked将Markdown转换为HTML）
+            const contentDiv = document.createElement('div');
+            let renderedContent = marked.parse(content);
+            renderedContent = renderedContent.replace(/<script>[\s\S]*?<\/script>/gi, '');
+            contentDiv.innerHTML = renderedContent;
 
-    // 页面加载时调用renderComments函数
-    window.onload = () => {
-        const comments = parseCommentsFromUrl();
-        renderComments(comments);
-    };
-</script>
+            // 评论时间
+            const timeDiv = document.createElement('div');
+            timeDiv.className = 'comment-time';
+            timeDiv.innerText = new Date(time).toLocaleString();
 
+            // 将所有元素添加到评论框中
+            commentBox.appendChild(userInfo);
+            commentBox.appendChild(contentDiv);
+            commentBox.appendChild(timeDiv);
+
+            return commentBox;
+        }
+
+        // 函数：渲染所有评论
+        function renderComments(comments) {
+            const container = document.getElementById('commentsContainer');
+            comments.forEach(comment => {
+                const commentElement = createCommentDiv(
+                    comment.avatarUrl,
+                    comment.userName,
+                    comment.userLink,
+                    comment.content,
+                    comment.time,
+                    comment.background
+                );
+                container.appendChild(commentElement);
+            });
+
+            // 所有评论加载完毕后隐藏加载动画
+            hideLoadingSpinner();
+        }
+
+        // 隐藏加载动画
+        function hideLoadingSpinner() {
+            document.getElementById('loadingSpinner').style.display = 'none';
+        }
+
+        // 页面加载时调用renderComments函数
+        window.onload = () => {
+            const comments = parseCommentsFromUrl();
+            renderComments(comments);
+        };
+    </script>
 </body>
+
 </html>
-
-

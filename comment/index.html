@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <title>评论页面</title>
+    <style>
+        .comment-box {
+            border: 1px solid #ccc;
+            border-radius: 10px; /* 圆角 */
+            padding: 15px;
+            margin-bottom: 10px;
+            background-size: cover;
+            background-position: center;
+        }
+        .user-avatar img {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%; /* 圆形头像 */
+            margin-right: 10px;
+        }
+        .user-info {
+            display: flex;
+            align-items: center;
+        }
+        /* 用户名链接样式 */
+        .user-info a {
+            color: black; /* 默认颜色为黑色 */
+            text-decoration: none; /* 去除下划线 */
+            transition: color 0.3s; /* 添加颜色过渡效果 */
+        }
+        .user-info a:hover {
+            color: blue; /* 鼠标悬停时的颜色，您可以根据需要更改 */
+        }
+        .comment-time {
+            font-size: 0.8em;
+            color: gray;
+        }
+        video {
+            max-width: 100%;
+            height: auto;
+        }
+    </style>
+    <!-- Markdown 渲染库 -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+<body>
+
+<!-- 动态生成的评论将插入到此处 -->
+<div id="commentsContainer"></div>
+
+<script>
+    function parseCommentsFromUrl() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const commentsJson = decodeURIComponent(urlParams.get('comment') || '[]');
+        return JSON.parse(commentsJson);
+    }
+
+    // 函数：生成单个评论的div
+    function createCommentDiv(avatarUrl, userName, userLink, content, time, background) {
+        const commentBox = document.createElement('div');
+        commentBox.className = 'comment-box';
+
+        // 用户信息部分
+        const userInfo = document.createElement('div');
+        userInfo.className = 'user-info';
+        
+        // 用户头像
+        const avatarDiv = document.createElement('div');
+        avatarDiv.className = 'user-avatar';
+        const avatarImg = document.createElement('img');
+        avatarImg.src = avatarUrl;
+        avatarDiv.appendChild(avatarImg);
+        
+        // 用户名和链接
+        const nameLink = document.createElement('a');
+        nameLink.href = userLink;
+        nameLink.innerText = userName;
+        nameLink.target = "_blank"; // 新窗口打开链接
+        
+        // 添加用户名到用户信息
+        userInfo.appendChild(avatarDiv);
+        userInfo.appendChild(nameLink);
+
+        // 评论内容（使用marked将Markdown转换为HTML）
+        const contentDiv = document.createElement('div');
+        let renderedContent = marked.parse(content);
+        renderedContent = renderedContent.replace(/<script>[\s\S]*?<\/script>/gi, '');
+        contentDiv.innerHTML = renderedContent;
+
+        // 评论时间
+        const timeDiv = document.createElement('div');
+        timeDiv.className = 'comment-time';
+        timeDiv.innerText = new Date(time).toLocaleString();
+
+        // 将所有元素添加到评论框中
+        commentBox.appendChild(userInfo);
+        commentBox.appendChild(contentDiv);
+        commentBox.appendChild(timeDiv);
+
+        return commentBox;
+    }
+
+    // 函数：渲染所有评论
+    function renderComments(comments) {
+        const container = document.getElementById('commentsContainer');
+        comments.forEach(comment => {
+            const commentElement = createCommentDiv(
+                comment.avatarUrl,
+                comment.userName,
+                comment.userLink,
+                comment.content,
+                comment.time,
+            );
+            container.appendChild(commentElement);
+        });
+    }
+
+    // 页面加载时调用renderComments函数
+    window.onload = () => {
+        const comments = parseCommentsFromUrl();
+        renderComments(comments);
+    };
+</script>
+
+</body>
+</html>
+
+

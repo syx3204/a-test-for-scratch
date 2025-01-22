@@ -66,48 +66,56 @@
     }
 
     // 函数：生成单个评论的div
-    function createCommentDiv(avatarUrl, userName, userLink, content, time, background) {
+    function createCommentDiv(avatarUrlPart, userName, userLinkPart, content, time, background) {
         const commentBox = document.createElement('div');
         commentBox.className = 'comment-box';
-
+    
         // 用户信息部分
         const userInfo = document.createElement('div');
         userInfo.className = 'user-info';
-        
-        // 用户头像
+    
+        // 用户头像 - 智能判断并拼接URL
         const avatarDiv = document.createElement('div');
         avatarDiv.className = 'user-avatar';
         const avatarImg = document.createElement('img');
-        avatarImg.src = avatarUrl;
+        avatarImg.src = isCompleteUrl(avatarUrlPart) ? avatarUrlPart : `https://m.ccw.site/avatar/${avatarUrlPart}`;
         avatarDiv.appendChild(avatarImg);
-        
-        // 用户名和链接
+    
+        // 用户名和链接 - 智能判断并拼接URL
         const nameLink = document.createElement('a');
-        nameLink.href = userLink;
+        nameLink.href = isCompleteUrl(userLinkPart) ? userLinkPart : `https://www.ccw.site/student/${userLinkPart}`;
         nameLink.innerText = userName;
-        nameLink.target = "_blank"; // 新窗口打开链接
-        
+        if (!isCompleteUrl(userLinkPart)) { // 如果不是完整链接（即进行了拼接），则新窗口打开
+            nameLink.target = "_blank";
+        }
+    
         // 添加用户名到用户信息
         userInfo.appendChild(avatarDiv);
         userInfo.appendChild(nameLink);
-
+    
         // 评论内容（使用marked将Markdown转换为HTML）
         const contentDiv = document.createElement('div');
         let renderedContent = marked.parse(content);
         renderedContent = renderedContent.replace(/<script>[\s\S]*?<\/script>/gi, '');
         contentDiv.innerHTML = renderedContent;
-
+    
         // 评论时间
         const timeDiv = document.createElement('div');
         timeDiv.className = 'comment-time';
         timeDiv.innerText = new Date(time).toLocaleString();
-
+    
         // 将所有元素添加到评论框中
         commentBox.appendChild(userInfo);
         commentBox.appendChild(contentDiv);
         commentBox.appendChild(timeDiv);
-
+    
         return commentBox;
+    }
+    
+    // 辅助函数：判断是否为完整的URL
+    function isCompleteUrl(url) {
+        if (!url) return false; // 空值直接返回false
+        return /^https?:\/\//i.test(url); // 使用正则表达式检查是否以http://或https://开头
     }
 
     // 函数：渲染所有评论

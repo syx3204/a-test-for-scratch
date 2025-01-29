@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <title>Base64 Encode Query Parameter</title>
+</head>
+<body>
+    <h1>Base64 编码查询参数</h1>
+    <p id="output"></p>
+
+    <script>
+        function getQueryParam(param) {
+            // 获取URL中的查询字符串部分
+            const urlParams = new URLSearchParams(window.location.search);
+            // 返回指定参数的值
+            return urlParams.get(param);
+        }
+
+        function base64Encode(str) {
+            // 对字符串进行Base64编码
+            return btoa(unescape(encodeURIComponent(str)));
+        }
+
+        window.onload = function() {
+            const paramValue = getQueryParam('value'); // 假设我们要获取名为'value'的参数
+            if (paramValue) {
+                const encodedValue = base64Encode(paramValue);
+                document.getElementById('output').textContent = 'Base64 编码结果: ' + encodedValue;
+            } else {
+                document.getElementById('output').textContent = '未找到名为 "value" 的查询参数';
+            }
+        };
+    </script>
+</body>
+</html>
